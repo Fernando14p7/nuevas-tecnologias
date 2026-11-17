@@ -1,0 +1,367 @@
+<!-- Desarollado por Mecias Fernando -->
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudTask v1.0</title>
+    <style>
+        /* Variables de diseño - Tema Oscuro Pulido */
+        :root {
+            --bg-color: #333333;
+            --surface-color: #1e293b;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --border-color: #253449;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+        }
+
+        h1 span {
+            color: var(--primary-color);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 0.875rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        button.btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button.btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .dashboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-color);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .filters button {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .filters button.active {
+            background-color: var(--surface-color);
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        li:hover {
+            border-color: #475569;
+        }
+
+        li.completed .task-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+            margin-right: 1rem;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+
+        .btn-toggle {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        .btn-toggle:hover { background-color: var(--success); color: white; }
+
+        .btn-delete {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        .btn-delete:hover { background-color: var(--danger); color: white; }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 0;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        footer strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Cloud<span>Task</span></h1>
+            <div class="version-badge">Versión 1.0</div>
+        </header>
+
+        <form id="taskForm" class="form-group">
+            <input type="text" id="taskInput" placeholder="¿Qué necesitas hacer hoy?" autocomplete="off" required>
+            <button type="submit" class="btn-primary">Añadir</button>
+        </form>
+
+        <div class="dashboard">
+            <div class="stats">
+                Pendientes: <strong id="pendingCount" style="color: var(--text-main);">0</strong>
+            </div>
+            <div class="filters" id="filters">
+                <button class="active" data-filter="all">Todas</button>
+                <button data-filter="pending">Pendientes</button>
+                <button data-filter="completed">Completadas</button>
+            </div>
+        </div>
+
+        <ul id="taskList">
+            <!-- Las tareas se inyectarán aquí mediante JS -->
+        </ul>
+
+        <footer>
+            Desarrollado por: <strong>Jose Fernando Mecias Bazurto</strong>
+        </footer>
+    </div>
+
+    <script>
+        // Estado de la aplicación
+        let tasks = [];
+        let currentFilter = 'all';
+
+        // Referencias al DOM
+        const taskForm = document.getElementById('taskForm');
+        const taskInput = document.getElementById('taskInput');
+        const taskList = document.getElementById('taskList');
+        const pendingCount = document.getElementById('pendingCount');
+        const filterButtons = document.querySelectorAll('.filters button');
+
+        // Escuchar el evento submit del formulario (Agregar tarea)
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = taskInput.value.trim();
+            if (text) {
+                const newTask = {
+                    id: Date.now(), // ID único basado en tiempo
+                    text: text,
+                    completed: false
+                };
+                tasks.push(newTask);
+                taskInput.value = '';
+                renderTasks();
+            }
+        });
+
+        // Función para cambiar estado completado/pendiente
+        function toggleTask(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            renderTasks();
+        }
+
+        // Función para eliminar tarea
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            renderTasks();
+        }
+
+        // Lógica de los botones de filtro
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Actualizar UI de botones
+                filterButtons.forEach(f => f.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Cambiar filtro actual y re-renderizar
+                currentFilter = btn.dataset.filter;
+                renderTasks();
+            });
+        });
+
+        // Función principal para dibujar la interfaz
+        function renderTasks() {
+            // Filtrar arreglo según la selección
+            let filteredTasks = tasks;
+            if (currentFilter === 'pending') {
+                filteredTasks = tasks.filter(t => !t.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTasks = tasks.filter(t => t.completed);
+            }
+
+            // Limpiar la lista actual
+            taskList.innerHTML = '';
+
+            // Mostrar estado vacío si no hay tareas
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = '<div class="empty-state">No hay tareas para mostrar en esta vista.</div>';
+            } else {
+                // Crear elementos HTML por cada tarea
+                filteredTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    if (task.completed) li.classList.add('completed');
+                    
+                    li.innerHTML = `
+                        <span class="task-text">${task.text}</span>
+                        <div class="task-actions">
+                            <button type="button" class="icon-btn btn-toggle" onclick="toggleTask(${task.id})" title="Marcar/Desmarcar">
+                                ${task.completed ? '↺' : '✓'}
+                            </button>
+                            <button type="button" class="icon-btn btn-delete" onclick="deleteTask(${task.id})" title="Eliminar">
+                                ✕
+                            </button>
+                        </div>
+                    `;
+                    taskList.appendChild(li);
+                });
+            }
+
+            // Actualizar el contador de pendientes
+            const pendingLength = tasks.filter(t => !t.completed).length;
+            pendingCount.textContent = pendingLength;
+        }
+
+        // Render inicial vacío
+        renderTasks();
+    </script>
+</body>
+</html>
