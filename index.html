@@ -1,16 +1,13 @@
-<!-- Desarollado por Mecias Fernando -->
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudTask v1.0</title>
+    <title>CloudTask v1.1</title>
     <style>
         /* Variables de diseño - Tema Oscuro Pulido */
         :root {
-            --bg-color: #333333;
+            --bg-color: #0f172a;
             --surface-color: #1e293b;
             --primary-color: #3b82f6;
             --primary-hover: #2563eb;
@@ -20,7 +17,8 @@
             --danger-hover: #dc2626;
             --success: #10b981;
             --success-hover: #059669;
-            --border-color: #253449;
+            --warning: #f59e0b;
+            --border-color: #334155;
         }
 
         body {
@@ -39,7 +37,7 @@
             padding: 2rem;
             border-radius: 16px;
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             height: fit-content;
         }
@@ -75,10 +73,10 @@
             display: flex;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
 
-        input[type="text"] {
-            flex: 1;
+        input[type="text"], select {
             padding: 0.875rem 1rem;
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -89,7 +87,12 @@
             font-size: 0.95rem;
         }
 
-        input[type="text"]:focus {
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input[type="text"]:focus, select:focus {
             border-color: var(--primary-color);
         }
 
@@ -119,6 +122,22 @@
             margin-bottom: 1rem;
             font-size: 0.875rem;
             color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .btn-clear {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .btn-clear:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger);
         }
 
         .filters {
@@ -127,12 +146,15 @@
             background: var(--bg-color);
             padding: 0.25rem;
             border-radius: 8px;
+            width: 100%;
+            justify-content: space-between;
         }
 
         .filters button {
+            flex: 1;
             background: transparent;
             color: var(--text-muted);
-            padding: 0.5rem 0.75rem;
+            padding: 0.5rem;
             font-size: 0.8rem;
             border-radius: 6px;
         }
@@ -172,11 +194,24 @@
             color: var(--text-muted);
         }
 
-        .task-text {
+        .task-content {
+            display: flex;
+            flex-direction: column;
             flex: 1;
-            word-break: break-word;
             margin-right: 1rem;
+            word-break: break-word;
         }
+
+        .task-priority {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .priority-Alta { color: var(--danger); }
+        .priority-Media { color: var(--warning); }
+        .priority-Baja { color: var(--success); }
 
         .task-actions {
             display: flex;
@@ -232,18 +267,31 @@
     <div class="app-container">
         <header>
             <h1>Cloud<span>Task</span></h1>
-            <div class="version-badge">Versión 1.0</div>
+            <div class="version-badge">Versión 1.1</div>
         </header>
 
         <form id="taskForm" class="form-group">
             <input type="text" id="taskInput" placeholder="¿Qué necesitas hacer hoy?" autocomplete="off" required>
+            <!-- NUEVO: Selector de prioridad -->
+            <select id="taskPriority" required>
+                <option value="Alta">Alta prioridad</option>
+                <option value="Media" selected>Media prioridad</option>
+                <option value="Baja">Baja prioridad</option>
+            </select>
             <button type="submit" class="btn-primary">Añadir</button>
         </form>
 
         <div class="dashboard">
             <div class="stats">
+                <!-- NUEVO: Contador Total -->
+                Total: <strong id="totalCount" style="color: var(--text-main);">0</strong> | 
                 Pendientes: <strong id="pendingCount" style="color: var(--text-main);">0</strong>
             </div>
+            <!-- NUEVO: Botón eliminar completadas -->
+            <button id="btnCleanCompleted" class="btn-clear" onclick="clearCompleted()">Borrar Completadas</button>
+        </div>
+
+        <div class="dashboard" style="margin-top: -0.5rem;">
             <div class="filters" id="filters">
                 <button class="active" data-filter="all">Todas</button>
                 <button data-filter="pending">Pendientes</button>
@@ -261,107 +309,43 @@
     </div>
 
     <script>
-        // Estado de la aplicación
-        let tasks = [];
+        // NUEVO: Cargar datos desde localStorage al iniciar la app
+        let tasks = JSON.parse(localStorage.getItem('tareas')) || [];
         let currentFilter = 'all';
 
-        // Referencias al DOM
         const taskForm = document.getElementById('taskForm');
         const taskInput = document.getElementById('taskInput');
+        const taskPriority = document.getElementById('taskPriority'); // Referencia a prioridad
         const taskList = document.getElementById('taskList');
+        const totalCount = document.getElementById('totalCount'); // Referencia contador total
         const pendingCount = document.getElementById('pendingCount');
         const filterButtons = document.querySelectorAll('.filters button');
 
-        // Escuchar el evento submit del formulario (Agregar tarea)
+        // NUEVO: Función para guardar en localStorage
+        function saveTasks() {
+            localStorage.setItem('tareas', JSON.stringify(tasks));
+        }
+
         taskForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const text = taskInput.value.trim();
+            const priority = taskPriority.value;
+
             if (text) {
                 const newTask = {
-                    id: Date.now(), // ID único basado en tiempo
+                    id: Date.now(),
                     text: text,
+                    priority: priority, // Guardamos la prioridad
                     completed: false
                 };
                 tasks.push(newTask);
                 taskInput.value = '';
+                saveTasks(); // Guardar cambios
                 renderTasks();
             }
         });
 
-        // Función para cambiar estado completado/pendiente
         function toggleTask(id) {
             tasks = tasks.map(task => {
                 if (task.id === id) {
-                    return { ...task, completed: !task.completed };
-                }
-                return task;
-            });
-            renderTasks();
-        }
-
-        // Función para eliminar tarea
-        function deleteTask(id) {
-            tasks = tasks.filter(task => task.id !== id);
-            renderTasks();
-        }
-
-        // Lógica de los botones de filtro
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Actualizar UI de botones
-                filterButtons.forEach(f => f.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // Cambiar filtro actual y re-renderizar
-                currentFilter = btn.dataset.filter;
-                renderTasks();
-            });
-        });
-
-        // Función principal para dibujar la interfaz
-        function renderTasks() {
-            // Filtrar arreglo según la selección
-            let filteredTasks = tasks;
-            if (currentFilter === 'pending') {
-                filteredTasks = tasks.filter(t => !t.completed);
-            } else if (currentFilter === 'completed') {
-                filteredTasks = tasks.filter(t => t.completed);
-            }
-
-            // Limpiar la lista actual
-            taskList.innerHTML = '';
-
-            // Mostrar estado vacío si no hay tareas
-            if (filteredTasks.length === 0) {
-                taskList.innerHTML = '<div class="empty-state">No hay tareas para mostrar en esta vista.</div>';
-            } else {
-                // Crear elementos HTML por cada tarea
-                filteredTasks.forEach(task => {
-                    const li = document.createElement('li');
-                    if (task.completed) li.classList.add('completed');
-                    
-                    li.innerHTML = `
-                        <span class="task-text">${task.text}</span>
-                        <div class="task-actions">
-                            <button type="button" class="icon-btn btn-toggle" onclick="toggleTask(${task.id})" title="Marcar/Desmarcar">
-                                ${task.completed ? '↺' : '✓'}
-                            </button>
-                            <button type="button" class="icon-btn btn-delete" onclick="deleteTask(${task.id})" title="Eliminar">
-                                ✕
-                            </button>
-                        </div>
-                    `;
-                    taskList.appendChild(li);
-                });
-            }
-
-            // Actualizar el contador de pendientes
-            const pendingLength = tasks.filter(t => !t.completed).length;
-            pendingCount.textContent = pendingLength;
-        }
-
-        // Render inicial vacío
-        renderTasks();
-    </script>
-</body>
-</html>
+                    return { ...task,
